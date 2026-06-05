@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Half POS - Point of Sale System
 
-## Getting Started
+Sistem Point of Sale modern dibangun dengan Next.js 14 dan stack teknologi terkini.
 
-First, run the development server:
+## Tech Stack
+
+- **Next.js 14** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **Shadcn UI** (komponen UI)
+- **Zustand** (state management untuk cart & session)
+- **Socket.io Client** (realtime updates)
+- **React Hook Form + Zod** (validasi form)
+- **Tanstack Query** (server state & caching)
+- **Recharts** (grafik analitik dashboard)
+
+## Fitur
+
+- **Dashboard** - Statistik penjualan, grafik pendapatan, produk terlaris
+- **Kasir (POS)** - Interface transaksi dengan keranjang belanja
+- **Manajemen Produk** - CRUD produk dengan validasi form
+- **Pesanan** - Riwayat transaksi dengan filter status
+- **Autentikasi** - Login dengan session persistence (Zustand)
+- **Realtime** - Socket.io client siap untuk update live (offline mode jika server tidak tersedia)
+
+## Memulai
 
 ```bash
+# Install dependencies
+npm install
+
+# Jalankan development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Account
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role  | Email              | Password  |
+|-------|--------------------|-----------|
+| Admin | admin@halfpos.com  | admin123  |
+| Kasir | kasir@halfpos.com  | kasir123  |
 
-## Learn More
+## Struktur Project
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── (dashboard)/     # Halaman terproteksi
+│   │   ├── dashboard/   # Dashboard analitik
+│   │   ├── pos/         # Interface kasir
+│   │   ├── products/    # Manajemen produk
+│   │   ├── orders/      # Riwayat pesanan
+│   │   └── settings/    # Pengaturan
+│   ├── api/             # API Routes (mock in-memory DB)
+│   └── login/           # Halaman login
+├── components/
+│   ├── ui/              # Shadcn UI components
+│   ├── dashboard/       # Komponen dashboard
+│   ├── pos/             # Komponen POS
+│   ├── products/        # Komponen produk
+│   ├── layout/          # Layout & navigasi
+│   └── providers/       # React providers
+├── hooks/               # Custom hooks (Tanstack Query)
+├── stores/              # Zustand stores
+├── lib/                 # Utilities, validations, API
+└── types/               # TypeScript types
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Socket.io (Opsional)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Untuk realtime updates, setup Socket.io server terpisah dan set environment variable:
 
-## Deploy on Vercel
+```env
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Aplikasi tetap berfungsi penuh tanpa Socket server (menampilkan "Offline mode").
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+```bash
+npm run dev      # Development server
+npm run build    # Production build
+npm run start    # Production server
+npm run lint     # ESLint
+```
