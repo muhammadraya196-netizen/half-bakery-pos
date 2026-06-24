@@ -37,9 +37,9 @@ export function Header({ title, description }: HeaderProps) {
     .toUpperCase() || "U";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
+    <header className="flex h-16 items-center justify-between border-b bg-white/80 backdrop-blur-sm px-6">
       <div>
-        <h2 className="text-xl font-semibold">{title}</h2>
+        <h2 className="font-display text-xl font-semibold text-bakery-dark">{title}</h2>
         {description && (
           <p className="text-sm text-muted-foreground">{description}</p>
         )}

@@ -29,8 +29,8 @@ export default function POSPage() {
   return (
     <>
       <Header title="Kasir (POS)" description="Proses transaksi penjualan" />
-      <div className="flex h-[calc(100vh-4rem)]">
-        <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
+        <div className="flex-1 overflow-auto p-4 space-y-4 min-h-0">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -70,7 +70,7 @@ export default function POSPage() {
           <ProductGrid products={products || []} isLoading={isLoading} />
         </div>
 
-        <div className="w-96 border-l bg-muted/30 p-4">
+        <div className="w-full lg:w-[26rem] xl:w-96 shrink-0 border-t lg:border-t-0 lg:border-l bg-muted/30 p-4 min-h-[420px] lg:min-h-0">
           <CartPanel />
         </div>
       </div>

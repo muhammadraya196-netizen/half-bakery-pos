@@ -7,6 +7,7 @@ interface CartState {
   customerName: string;
   notes: string;
   paymentMethod: PaymentMethod;
+  cashReceived: number;
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -14,11 +15,15 @@ interface CartState {
   setCustomerName: (name: string) => void;
   setNotes: (notes: string) => void;
   setPaymentMethod: (method: PaymentMethod) => void;
+  setCashReceived: (amount: number) => void;
   clearCart: () => void;
   getSubtotal: () => number;
   getTax: () => number;
   getTotal: () => number;
+  getChangeAmount: () => number;
+  getShortfall: () => number;
   getItemCount: () => number;
+  canCheckout: () => boolean;
 }
 
 const TAX_RATE = 0.1;
@@ -29,6 +34,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   customerName: "",
   notes: "",
   paymentMethod: "cash",
+  cashReceived: 0,
 
   addItem: (product) =>
     set((state) => {
@@ -68,7 +74,13 @@ export const useCartStore = create<CartState>((set, get) => ({
   setDiscount: (discount) => set({ discount: Math.max(0, discount) }),
   setCustomerName: (name) => set({ customerName: name }),
   setNotes: (notes) => set({ notes }),
-  setPaymentMethod: (method) => set({ paymentMethod: method }),
+  setPaymentMethod: (method) =>
+    set({
+      paymentMethod: method,
+      cashReceived: method === "cash" ? get().cashReceived : 0,
+    }),
+  setCashReceived: (amount) =>
+    set({ cashReceived: Math.max(0, amount) }),
 
   clearCart: () =>
     set({
@@ -77,6 +89,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       customerName: "",
       notes: "",
       paymentMethod: "cash",
+      cashReceived: 0,
     }),
 
   getSubtotal: () =>
@@ -91,6 +104,29 @@ export const useCartStore = create<CartState>((set, get) => ({
     const subtotal = get().getSubtotal();
     const tax = subtotal * TAX_RATE;
     return Math.max(0, subtotal + tax - get().discount);
+  },
+
+  getChangeAmount: () => {
+    const { paymentMethod, cashReceived } = get();
+    if (paymentMethod !== "cash") return 0;
+    const total = get().getTotal();
+    return cashReceived > total ? cashReceived - total : 0;
+  },
+
+  getShortfall: () => {
+    const { paymentMethod, cashReceived } = get();
+    if (paymentMethod !== "cash") return 0;
+    const total = get().getTotal();
+    return cashReceived < total ? total - cashReceived : 0;
+  },
+
+  canCheckout: () => {
+    const { items, paymentMethod, cashReceived } = get();
+    if (items.length === 0) return false;
+    if (paymentMethod === "cash") {
+      return cashReceived >= get().getTotal();
+    }
+    return true;
   },
 
   getItemCount: () =>

@@ -47,9 +47,9 @@ const statusLabel: Record<string, string> = {
 
 const paymentLabel: Record<string, string> = {
   cash: "Tunai",
-  card: "Kartu",
+  card: "E-Wallet",
   qris: "QRIS",
-  transfer: "Transfer",
+  transfer: "Transfer Bank",
 };
 
 export default function OrdersPage() {
@@ -162,7 +162,20 @@ export default function OrdersPage() {
                   <p className="text-muted-foreground">Pembayaran</p>
                   <p className="font-medium">{paymentLabel[selectedOrder.paymentMethod]}</p>
                 </div>
+                {selectedOrder.customerName && (
+                  <div>
+                    <p className="text-muted-foreground">Pelanggan</p>
+                    <p className="font-medium">{selectedOrder.customerName}</p>
+                  </div>
+                )}
               </div>
+
+              {selectedOrder.notes && (
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Catatan</p>
+                  <p className="font-medium">{selectedOrder.notes}</p>
+                </div>
+              )}
 
               <Separator />
 
@@ -199,6 +212,23 @@ export default function OrdersPage() {
                   <span>Total</span>
                   <span className="text-primary">{formatCurrency(selectedOrder.total)}</span>
                 </div>
+                {selectedOrder.paymentMethod === "cash" &&
+                  selectedOrder.cashReceived !== undefined && (
+                    <>
+                      <div className="flex justify-between pt-1">
+                        <span className="text-muted-foreground">Dibayar</span>
+                        <span className="font-semibold">
+                          {formatCurrency(selectedOrder.cashReceived)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700">
+                        <span className="font-medium">Kembalian</span>
+                        <span className="font-bold">
+                          {formatCurrency(selectedOrder.changeAmount ?? 0)}
+                        </span>
+                      </div>
+                    </>
+                  )}
               </div>
             </div>
           )}

@@ -17,6 +17,10 @@ export interface Product {
   category: string;
   image?: string;
   sku: string;
+  rating?: number;
+  isBestSeller?: boolean;
+  isCustomerFavorite?: boolean;
+  badge?: "new" | "limited";
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +55,8 @@ export interface Order {
   cashierName: string;
   customerName?: string;
   notes?: string;
+  cashReceived?: number;
+  changeAmount?: number;
   createdAt: string;
 }
 

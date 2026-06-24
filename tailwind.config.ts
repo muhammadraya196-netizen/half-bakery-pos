@@ -43,6 +43,9 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        cream: "hsl(var(--cream))",
+        "bakery-dark": "hsl(var(--bakery-dark))",
+        "bakery-accent": "hsl(var(--bakery-accent))",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -55,6 +58,17 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1rem",
+        "2xl": "1.25rem",
+        "3xl": "1.5rem",
+      },
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-playfair)", "Georgia", "serif"],
+      },
+      backgroundImage: {
+        "bakery-gradient":
+          "linear-gradient(135deg, hsl(var(--cream)) 0%, hsl(var(--background)) 50%, hsl(var(--bakery-accent)) 100%)",
       },
     },
   },
