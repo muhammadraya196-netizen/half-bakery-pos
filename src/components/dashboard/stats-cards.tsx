@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Package, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import type { AnalyticsData } from "@/types";
@@ -24,12 +24,6 @@ export function StatsCards({ data }: StatsCardsProps) {
       icon: ShoppingBag,
     },
     {
-      title: "Total Produk",
-      value: data.totalProducts.toString(),
-      change: null,
-      icon: Package,
-    },
-    {
       title: "Rata-rata Order",
       value: formatCurrency(data.averageOrderValue),
       change: null,
@@ -38,7 +32,7 @@ export function StatsCards({ data }: StatsCardsProps) {
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const isPositive = stat.change !== null && stat.change >= 0;
