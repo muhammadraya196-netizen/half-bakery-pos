@@ -1,17 +1,32 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Product } from "@/types";
+import { productApi } from "@/lib/api/product-api";
+import type { Product, ProductQuery, PaginatedResponse } from "@/types";
 import type { ProductFormData } from "@/lib/validations/product";
 
+/** List penuh (array). Dipakai POS & menu — perilaku lama dipertahankan. */
 export function useProducts(params?: { category?: string; search?: string }) {
-  const searchParams = new URLSearchParams();
-  if (params?.category) searchParams.set("category", params.category);
-  if (params?.search) searchParams.set("search", params.search);
-  const query = searchParams.toString();
-
   return useQuery({
-    queryKey: ["products", params],
-    queryFn: () => api.get<Product[]>(`/api/products${query ? `?${query}` : ""}`),
+    queryKey: ["products", "list", params ?? {}],
+    queryFn: () => productApi.list(params ?? {}),
+  });
+}
+
+/**
+ * List produk paginasi (backend filter + limit + offset).
+ * Query key mencakup seluruh parameter agar refetch saat apa pun berubah.
+ * `keepPreviousData` menjaga data lama tampil saat berpindah halaman (tanpa berkedip).
+ */
+export function useProductsPaginated(query: ProductQuery) {
+  return useQuery<PaginatedResponse<Product>>({
+    queryKey: ["products", "paginated", query],
+    queryFn: () => productApi.paginated(query),
+    placeholderData: keepPreviousData,
   });
 }
 

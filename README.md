@@ -19,7 +19,7 @@ Sistem Point of Sale modern dibangun dengan Next.js 14 dan stack teknologi terki
 - **Dashboard** - Statistik penjualan, grafik pendapatan, produk terlaris
 - **Kasir (POS)** - Interface transaksi dengan keranjang belanja
 - **Manajemen Produk** - CRUD produk dengan validasi form
-- **Pesanan** - Riwayat transaksi dengan filter status
+- **Daftar Penjualan** - Riwayat transaksi dengan filter periode, ringkasan penjualan, sorting, dan pagination
 - **Autentikasi** - Login dengan session persistence (Zustand)
 - **Realtime** - Socket.io client siap untuk update live (offline mode jika server tidak tersedia)
 
@@ -51,7 +51,7 @@ src/
 │   │   ├── dashboard/   # Dashboard analitik
 │   │   ├── pos/         # Interface kasir
 │   │   ├── products/    # Manajemen produk
-│   │   ├── orders/      # Riwayat pesanan
+│   │   ├── orders/      # Daftar Penjualan (riwayat transaksi)
 │   │   └── settings/    # Pengaturan
 │   ├── api/             # API Routes (mock in-memory DB)
 │   └── login/           # Halaman login

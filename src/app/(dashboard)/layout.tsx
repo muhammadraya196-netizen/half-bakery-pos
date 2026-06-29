@@ -3,6 +3,7 @@
 import { AuthGuard } from "@/components/layout/auth-guard";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SocketProvider } from "@/components/providers/socket-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +17,7 @@ export default function DashboardLayout({
           <Sidebar />
           <main className="flex-1 overflow-auto">{children}</main>
         </div>
+        <Toaster />
       </SocketProvider>
     </AuthGuard>
   );

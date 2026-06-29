@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOrders, createOrder } from "@/lib/db";
+import { filterSales, sortSales, querySales } from "@/lib/services/sales-service";
+import type { SalesQuery, SalesSortBy, SortDirection } from "@/types";
+
+export const dynamic = "force-dynamic";
+
+function toNumber(value: string | null): number | undefined {
+  if (value === null || value.trim() === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 const createOrderSchema = z
   .object({
@@ -58,15 +68,27 @@ const createOrderSchema = z
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status");
 
-  let orders = getOrders();
+  const query: SalesQuery = {
+    startDate: searchParams.get("startDate") ?? undefined,
+    endDate: searchParams.get("endDate") ?? undefined,
+    search: searchParams.get("search") ?? undefined,
+    status: searchParams.get("status") ?? undefined,
+    sortBy: (searchParams.get("sortBy") as SalesSortBy) ?? undefined,
+    sortDir: (searchParams.get("sortDir") as SortDirection) ?? undefined,
+    limit: toNumber(searchParams.get("limit")),
+    offset: toNumber(searchParams.get("offset")),
+  };
 
-  if (status && status !== "all") {
-    orders = orders.filter((o) => o.status === status);
+  const orders = getOrders();
+
+  // Backward compatible: tanpa `limit` → kembalikan array (dipakai dashboard).
+  // Dengan `limit` → kembalikan envelope { data, total, limit, offset, summary }.
+  if (query.limit === undefined) {
+    return NextResponse.json(sortSales(filterSales(orders, query), query));
   }
 
-  return NextResponse.json(orders);
+  return NextResponse.json(querySales(orders, query));
 }
 
 export async function POST(request: Request) {

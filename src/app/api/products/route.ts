@@ -1,29 +1,41 @@
 import { NextResponse } from "next/server";
 import { getProducts, createProduct } from "@/lib/db";
 import { productSchema } from "@/lib/validations/product";
+import { queryProducts, filterProducts } from "@/lib/services/product-service";
+import type { ProductQuery, ProductStatus } from "@/types";
+
+export const dynamic = "force-dynamic";
+
+/** Ubah string param → number bila valid, jika tidak undefined. */
+function toNumber(value: string | null): number | undefined {
+  if (value === null || value.trim() === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const category = searchParams.get("category");
-  const search = searchParams.get("search");
 
-  let products = getProducts();
+  const query: ProductQuery = {
+    search: searchParams.get("search") ?? undefined,
+    category: searchParams.get("category") ?? undefined,
+    status: (searchParams.get("status") as ProductStatus) ?? undefined,
+    minPrice: toNumber(searchParams.get("minPrice")),
+    maxPrice: toNumber(searchParams.get("maxPrice")),
+    minStock: toNumber(searchParams.get("minStock")),
+    limit: toNumber(searchParams.get("limit")),
+    offset: toNumber(searchParams.get("offset")),
+  };
 
-  if (category && category !== "all") {
-    products = products.filter((p) => p.category === category);
+  const products = getProducts();
+
+  // Backward compatible: tanpa `limit` → kembalikan array penuh (dipakai POS & menu).
+  // Dengan `limit` → kembalikan envelope paginasi { data, total, limit, offset }.
+  if (query.limit === undefined) {
+    return NextResponse.json(filterProducts(products, query));
   }
 
-  if (search) {
-    const q = search.toLowerCase();
-    products = products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
-    );
-  }
-
-  return NextResponse.json(products);
+  return NextResponse.json(queryProducts(products, query));
 }
 
 export async function POST(request: Request) {

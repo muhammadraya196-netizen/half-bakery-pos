@@ -23,6 +23,8 @@ export function Hero() {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-bakery-dark/85 via-bakery-dark/70 to-bakery-dark/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-bakery-dark/60 via-transparent to-transparent" />
+        {/* Scrim atas khusus area navbar agar menu tetap terbaca penuh selebar layar */}
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/45 to-transparent" />
       </div>
 
       <div className="relative z-10 container mx-auto px-4 md:px-6 pt-24 pb-16">

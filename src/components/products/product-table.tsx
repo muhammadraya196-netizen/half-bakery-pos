@@ -41,6 +41,7 @@ export function ProductTable({ products, onEdit, onDelete, isLoading }: ProductT
           <TableHead>Kategori</TableHead>
           <TableHead className="text-right">Harga</TableHead>
           <TableHead className="text-center">Stok</TableHead>
+          <TableHead className="text-center">Status</TableHead>
           <TableHead className="text-right">Aksi</TableHead>
         </TableRow>
       </TableHeader>
@@ -56,6 +57,11 @@ export function ProductTable({ products, onEdit, onDelete, isLoading }: ProductT
             <TableCell className="text-center">
               <Badge variant={product.stock > 10 ? "secondary" : "warning"}>
                 {product.stock}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-center">
+              <Badge variant={product.stock > 0 ? "success" : "destructive"}>
+                {product.stock > 0 ? "Aktif" : "Nonaktif"}
               </Badge>
             </TableCell>
             <TableCell className="text-right">
