@@ -1,20 +1,32 @@
 import { create } from "zustand";
 import type { CartItem, PaymentMethod, Product } from "@/types";
+import {
+  createPaymentDraft,
+  summarizePayments,
+  type PaymentDraft,
+} from "@/lib/payment";
 
 interface CartState {
   items: CartItem[];
   discount: number;
   customerName: string;
   notes: string;
-  paymentMethod: PaymentMethod;
-  cashReceived: number;
+  payments: PaymentDraft[];
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   setDiscount: (discount: number) => void;
   setCustomerName: (name: string) => void;
   setNotes: (notes: string) => void;
+  addPayment: () => void;
+  updatePayment: (
+    id: string,
+    patch: Partial<Pick<PaymentDraft, "method" | "amount" | "cashReceived">>
+  ) => void;
+  removePayment: (id: string) => void;
+  /** Mengubah metode baris pertama. Dipakai alur satu pembayaran. */
   setPaymentMethod: (method: PaymentMethod) => void;
+  /** Mengubah uang diterima pada baris tunai pertama. */
   setCashReceived: (amount: number) => void;
   clearCart: () => void;
   getSubtotal: () => number;
@@ -26,6 +38,18 @@ interface CartState {
   canCheckout: () => boolean;
 }
 
+let paymentSeq = 1;
+
+function nextPaymentId(): string {
+  paymentSeq += 1;
+  return `pay-${paymentSeq}`;
+}
+
+function sanitizeMoney(value: number): number {
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return Math.round(value);
+}
+
 const TAX_RATE = 0.1;
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -33,8 +57,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   discount: 0,
   customerName: "",
   notes: "",
-  paymentMethod: "cash",
-  cashReceived: 0,
+  payments: [createPaymentDraft("pay-1", "cash")],
 
   addItem: (product) =>
     set((state) => {
@@ -74,13 +97,72 @@ export const useCartStore = create<CartState>((set, get) => ({
   setDiscount: (discount) => set({ discount: Math.max(0, discount) }),
   setCustomerName: (name) => set({ customerName: name }),
   setNotes: (notes) => set({ notes }),
-  setPaymentMethod: (method) =>
-    set({
-      paymentMethod: method,
-      cashReceived: method === "cash" ? get().cashReceived : 0,
+
+  addPayment: () =>
+    set((state) => {
+      const total = Math.round(get().getTotal());
+      let payments = state.payments;
+      if (payments.length === 1) {
+        const only = payments[0];
+        if (only.method === "cash" && only.amount === 0 && only.cashReceived > 0) {
+          payments = [
+            {
+              ...only,
+              amount: Math.min(only.cashReceived, total),
+            },
+          ];
+        }
+      }
+      return {
+        payments: [
+          ...payments,
+          createPaymentDraft(nextPaymentId(), "debit"),
+        ],
+      };
     }),
-  setCashReceived: (amount) =>
-    set({ cashReceived: Math.max(0, amount) }),
+
+  updatePayment: (id, patch) =>
+    set((state) => ({
+      payments: state.payments.map((line) => {
+        if (line.id !== id) return line;
+        const next = { ...line, ...patch };
+        if (patch.amount !== undefined) {
+          next.amount = sanitizeMoney(patch.amount);
+        }
+        if (patch.cashReceived !== undefined) {
+          next.cashReceived = sanitizeMoney(patch.cashReceived);
+        }
+        if (patch.method && patch.method !== "cash") {
+          next.cashReceived = 0;
+        }
+        if (
+          patch.amount !== undefined &&
+          next.method === "cash" &&
+          (line.cashReceived === 0 || line.cashReceived === line.amount)
+        ) {
+          next.cashReceived = next.amount;
+        }
+        return next;
+      }),
+    })),
+
+  removePayment: (id) =>
+    set((state) => {
+      if (state.payments.length <= 1) return state;
+      return { payments: state.payments.filter((line) => line.id !== id) };
+    }),
+
+  setPaymentMethod: (method) => {
+    const first = get().payments[0];
+    if (!first) return;
+    get().updatePayment(first.id, { method });
+  },
+
+  setCashReceived: (amount) => {
+    const first = get().payments.find((line) => line.method === "cash") ?? get().payments[0];
+    if (!first) return;
+    get().updatePayment(first.id, { cashReceived: amount });
+  },
 
   clearCart: () =>
     set({
@@ -88,8 +170,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       discount: 0,
       customerName: "",
       notes: "",
-      paymentMethod: "cash",
-      cashReceived: 0,
+      payments: [createPaymentDraft(nextPaymentId(), "cash")],
     }),
 
   getSubtotal: () =>
@@ -106,27 +187,15 @@ export const useCartStore = create<CartState>((set, get) => ({
     return Math.max(0, subtotal + tax - get().discount);
   },
 
-  getChangeAmount: () => {
-    const { paymentMethod, cashReceived } = get();
-    if (paymentMethod !== "cash") return 0;
-    const total = get().getTotal();
-    return cashReceived > total ? cashReceived - total : 0;
-  },
+  getChangeAmount: () =>
+    summarizePayments(get().payments, get().getTotal()).changeAmount,
 
-  getShortfall: () => {
-    const { paymentMethod, cashReceived } = get();
-    if (paymentMethod !== "cash") return 0;
-    const total = get().getTotal();
-    return cashReceived < total ? total - cashReceived : 0;
-  },
+  getShortfall: () =>
+    summarizePayments(get().payments, get().getTotal()).remaining,
 
   canCheckout: () => {
-    const { items, paymentMethod, cashReceived } = get();
-    if (items.length === 0) return false;
-    if (paymentMethod === "cash") {
-      return cashReceived >= get().getTotal();
-    }
-    return true;
+    if (get().items.length === 0) return false;
+    return summarizePayments(get().payments, get().getTotal()).canCheckout;
   },
 
   getItemCount: () =>

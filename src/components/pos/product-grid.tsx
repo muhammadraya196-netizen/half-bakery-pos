@@ -12,9 +12,16 @@ import type { Product } from "@/types";
 interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
-export function ProductGrid({ products, isLoading }: ProductGridProps) {
+export function ProductGrid({
+  products,
+  isLoading,
+  emptyTitle = "Tidak ada produk",
+  emptyDescription = "Coba ubah filter atau kata kunci pencarian",
+}: ProductGridProps) {
   const addItem = useCartStore((s) => s.addItem);
 
   if (isLoading) {
@@ -38,8 +45,10 @@ export function ProductGrid({ products, isLoading }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <p className="text-lg font-medium">Tidak ada produk</p>
-        <p className="text-sm">Coba ubah filter atau kata kunci pencarian</p>
+        <p className="text-lg font-medium">{emptyTitle}</p>
+        {emptyDescription ? (
+          <p className="text-sm">{emptyDescription}</p>
+        ) : null}
       </div>
     );
   }
@@ -62,30 +71,55 @@ export function ProductGrid({ products, isLoading }: ProductGridProps) {
                 sizes="200px"
                 className="transition-transform group-hover:scale-105"
               />
-              {product.isBestSeller && (
+              {product.isPromoBundling && product.promoLabel ? (
+                <Badge className="absolute top-2 left-2 text-[10px] px-1.5 py-0 border-0 z-10">
+                  {product.promoLabel}
+                </Badge>
+              ) : product.isBestSeller ? (
                 <Badge className="absolute top-2 left-2 text-[10px] px-1.5 py-0 border-0 z-10">
                   Best
                 </Badge>
-              )}
+              ) : null}
             </div>
             <div className="p-3">
               <h3 className="font-medium text-sm leading-tight line-clamp-2">
                 {product.name}
               </h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {product.category}
+              <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                {product.isPromoBundling && product.bundleItems
+                  ? product.bundleItems.join(" · ")
+                  : product.category}
               </p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="font-bold text-primary text-sm">
-                  {formatCurrency(product.price)}
-                </span>
-                <Badge
-                  variant={product.stock > 10 ? "secondary" : "warning"}
-                  className="text-[10px]"
-                >
-                  {product.stock}
-                </Badge>
-              </div>
+              {product.isPromoBundling && product.savings ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className="shrink-0 whitespace-nowrap text-sm font-bold text-primary">
+                    {formatCurrency(product.price)}
+                  </span>
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto shrink-0 whitespace-nowrap text-[10px]"
+                  >
+                    Hemat {formatCurrency(product.savings)}
+                  </Badge>
+                  {product.originalPrice ? (
+                    <span className="basis-full whitespace-nowrap text-[10px] leading-none text-muted-foreground line-through">
+                      {formatCurrency(product.originalPrice)}
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="font-bold text-primary text-sm">
+                    {formatCurrency(product.price)}
+                  </span>
+                  <Badge
+                    variant={product.stock > 10 ? "secondary" : "warning"}
+                    className="text-[10px]"
+                  >
+                    {product.stock}
+                  </Badge>
+                </div>
+              )}
               <Button
                 size="sm"
                 className="mt-2 w-full rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"

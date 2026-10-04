@@ -16,6 +16,21 @@ import { useSessionStore } from "@/stores/session-store";
 import { api } from "@/lib/api";
 import type { User } from "@/types";
 
+/**
+ * Mengambil tujuan redirect setelah login dari query `?redirect=`.
+ * Hanya menerima path internal (diawali "/" tunggal) demi keamanan
+ * (mencegah open redirect ke domain luar). Default ke dashboard.
+ */
+function getRedirectTarget(): string {
+  if (typeof window === "undefined") return "/dashboard";
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get("redirect");
+  if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+    return redirect;
+  }
+  return "/dashboard";
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated } = useSessionStore();
@@ -35,7 +50,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace(getRedirectTarget());
     }
   }, [isAuthenticated, router]);
 
@@ -46,7 +61,7 @@ export default function LoginPage() {
         data
       );
       login(response.user, response.token);
-      router.push("/dashboard");
+      router.push(getRedirectTarget());
     } catch (err) {
       setError("root", {
         message: err instanceof Error ? err.message : "Login gagal",

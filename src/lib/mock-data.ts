@@ -7,6 +7,100 @@ export const CATEGORIES = [...BAKERY_CATEGORIES];
 const TS = "2026-01-15T08:00:00Z";
 const TU = "2026-06-01T10:00:00Z";
 
+/**
+ * Promo bundling untuk filter kasir. Bukan bagian katalog produk
+ * (`mockProducts`), jadi harga dan stok produk biasa tidak berubah.
+ */
+export const PROMO_BUNDLING_PRODUCTS: Product[] = [
+  {
+    id: "bundle-coffee-break",
+    name: "Coffee Break",
+    description:
+      "Nikmati coffee favoritmu bersama pastry pilihan dengan harga lebih hemat.",
+    price: 32000,
+    originalPrice: 36000,
+    savings: 4000,
+    bundleItems: ["1 Coffee", "1 Pastry"],
+    promoLabel: "BEST SELLER",
+    isPromoBundling: true,
+    stock: 99,
+    category: "Promo Bundling",
+    image: getProductImage("Cafe Latte", "Coffee & Drink"),
+    sku: "BND-001",
+    createdAt: TS,
+    updatedAt: TU,
+  },
+  {
+    id: "bundle-bread-duo",
+    name: "Bread Duo",
+    description: "Beli dua artisan bread favoritmu dengan harga spesial.",
+    price: 35000,
+    originalPrice: 40000,
+    savings: 5000,
+    bundleItems: ["2 Artisan Bread"],
+    promoLabel: "SAVE MORE",
+    isPromoBundling: true,
+    stock: 99,
+    category: "Promo Bundling",
+    image: getProductImage("Japanese Milk Bread", "Bread"),
+    sku: "BND-002",
+    createdAt: TS,
+    updatedAt: TU,
+  },
+  {
+    id: "bundle-sweet-pair",
+    name: "Sweet Pair",
+    description: "Dua slice cake favorit untuk dinikmati bersama.",
+    price: 45000,
+    originalPrice: 52000,
+    savings: 7000,
+    bundleItems: ["2 Slice Cake"],
+    promoLabel: "FAVORITE",
+    isPromoBundling: true,
+    stock: 99,
+    category: "Promo Bundling",
+    image: getProductImage("Strawberry Shortcake", "Cake"),
+    sku: "BND-003",
+    createdAt: TS,
+    updatedAt: TU,
+  },
+  {
+    id: "bundle-breakfast",
+    name: "Breakfast Bundle",
+    description: "Pasangan sempurna untuk memulai hari dengan lebih nikmat.",
+    price: 30000,
+    originalPrice: 34000,
+    savings: 4000,
+    bundleItems: ["1 Pastry", "1 Coffee"],
+    promoLabel: "BREAKFAST",
+    isPromoBundling: true,
+    stock: 99,
+    category: "Promo Bundling",
+    image: getProductImage("Cinnamon Roll", "Pastry"),
+    sku: "BND-004",
+    createdAt: TS,
+    updatedAt: TU,
+  },
+  {
+    id: "bundle-cake-date",
+    name: "Cake Date",
+    description:
+      "Nikmati cake dan coffee bersama orang tersayang dengan harga spesial.",
+    price: 70000,
+    originalPrice: 80000,
+    savings: 10000,
+    bundleItems: ["2 Slice Cake", "2 Coffee"],
+    promoLabel: "SPECIAL DEAL",
+    isPromoBundling: true,
+    stock: 99,
+    category: "Promo Bundling",
+    image: getProductImage("Chocolate Signature Cake", "Cake"),
+    sku: "BND-005",
+    createdAt: TS,
+    updatedAt: TU,
+  },
+];
+
 const _mockProducts: Product[] = [
   // ── Best Sellers (featured first) ──
   {

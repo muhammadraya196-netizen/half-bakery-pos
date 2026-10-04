@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { formatOrderPaymentLabel } from "@/lib/payment";
 import type { Order, SalesSortBy, SortDirection } from "@/types";
 
 const statusVariant: Record<string, "default" | "success" | "warning" | "destructive" | "secondary"> = {
@@ -27,13 +28,6 @@ const statusLabel: Record<string, string> = {
   pending: "Pending",
   cancelled: "Dibatalkan",
   refunded: "Refund",
-};
-
-const paymentLabel: Record<string, string> = {
-  cash: "Tunai",
-  card: "E-Wallet",
-  qris: "QRIS",
-  transfer: "Transfer Bank",
 };
 
 function itemCount(order: Order): number {
@@ -140,7 +134,9 @@ export function SalesTable({
             </TableCell>
             <TableCell>{order.cashierName}</TableCell>
             <TableCell className="text-center">{itemCount(order)}</TableCell>
-            <TableCell>{paymentLabel[order.paymentMethod]}</TableCell>
+            <TableCell className="max-w-[9rem] whitespace-normal">
+              {formatOrderPaymentLabel(order)}
+            </TableCell>
             <TableCell className="text-right font-semibold">
               {formatCurrency(order.total)}
             </TableCell>

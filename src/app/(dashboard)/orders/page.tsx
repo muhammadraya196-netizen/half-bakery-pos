@@ -22,6 +22,7 @@ import { useSales } from "@/hooks/use-sales";
 import { useDebounce } from "@/hooks/use-debounce";
 import { getPeriodRange } from "@/lib/services/sales-service";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
+import { formatOrderPaymentLabel, getOrderPayments, paymentLabel } from "@/lib/payment";
 import type {
   Order,
   SalesPeriod,
@@ -44,13 +45,6 @@ const statusLabel: Record<string, string> = {
   pending: "Pending",
   cancelled: "Dibatalkan",
   refunded: "Refund",
-};
-
-const paymentLabel: Record<string, string> = {
-  cash: "Tunai",
-  card: "E-Wallet",
-  qris: "QRIS",
-  transfer: "Transfer Bank",
 };
 
 export default function SalesPage() {
@@ -229,9 +223,17 @@ export default function SalesPage() {
                   <p className="text-muted-foreground">Kasir</p>
                   <p className="font-medium">{selectedOrder.cashierName}</p>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <p className="text-muted-foreground">Pembayaran</p>
-                  <p className="font-medium">{paymentLabel[selectedOrder.paymentMethod]}</p>
+                  <p className="font-medium">{formatOrderPaymentLabel(selectedOrder)}</p>
+                  <div className="mt-1 space-y-1">
+                    {getOrderPayments(selectedOrder).map((line, index) => (
+                      <div key={`${line.method}-${index}`} className="flex justify-between gap-3 text-sm">
+                        <span>{paymentLabel[line.method]}</span>
+                        <span className="tabular-nums">{formatCurrency(line.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {selectedOrder.customerName && (
                   <div>
@@ -283,7 +285,8 @@ export default function SalesPage() {
                   <span>Total</span>
                   <span className="text-primary">{formatCurrency(selectedOrder.total)}</span>
                 </div>
-                {selectedOrder.paymentMethod === "cash" &&
+                {!selectedOrder.payments?.length &&
+                  selectedOrder.paymentMethod === "cash" &&
                   selectedOrder.cashReceived !== undefined && (
                     <>
                       <div className="flex justify-between pt-1">
@@ -299,6 +302,15 @@ export default function SalesPage() {
                         </span>
                       </div>
                     </>
+                  )}
+                {!!selectedOrder.payments?.length &&
+                  (selectedOrder.changeAmount ?? 0) > 0 && (
+                    <div className="flex justify-between text-emerald-700">
+                      <span className="font-medium">Kembalian</span>
+                      <span className="font-bold">
+                        {formatCurrency(selectedOrder.changeAmount ?? 0)}
+                      </span>
+                    </div>
                   )}
               </div>
             </div>

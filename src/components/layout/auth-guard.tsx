@@ -10,7 +10,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace("/login");
+      // Simpan tujuan awal (termasuk query, mis. ?promo=...) agar setelah
+      // login pengguna kembali ke halaman yang tadi diminta.
+      const target = window.location.pathname + window.location.search;
+      const redirect =
+        target && target !== "/login"
+          ? `?redirect=${encodeURIComponent(target)}`
+          : "";
+      router.replace(`/login${redirect}`);
     }
   }, [isAuthenticated, router]);
 

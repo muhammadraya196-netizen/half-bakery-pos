@@ -9,6 +9,7 @@ import {
   QrCode,
   Building,
   Wallet,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,18 +36,17 @@ import { useCartStore } from "@/stores/cart-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useCreateOrder } from "@/hooks/use-orders";
 import type { PaymentMethod } from "@/types";
+import { PAYMENT_METHODS, summarizePayments } from "@/lib/payment";
 import { cn } from "@/lib/utils";
 
-const paymentMethods: {
-  value: PaymentMethod;
-  label: string;
-  icon: React.ReactNode;
-}[] = [
-  { value: "cash", label: "Tunai", icon: <Banknote className="h-4 w-4" /> },
-  { value: "qris", label: "QRIS", icon: <QrCode className="h-4 w-4" /> },
-  { value: "transfer", label: "Transfer Bank", icon: <Building className="h-4 w-4" /> },
-  { value: "card", label: "E-Wallet", icon: <Wallet className="h-4 w-4" /> },
-];
+const paymentIcons: Record<PaymentMethod, React.ReactNode> = {
+  cash: <Banknote className="h-4 w-4" />,
+  debit: <CreditCard className="h-4 w-4" />,
+  credit: <CreditCard className="h-4 w-4" />,
+  card: <Wallet className="h-4 w-4" />,
+  qris: <QrCode className="h-4 w-4" />,
+  transfer: <Building className="h-4 w-4" />,
+};
 
 const QUICK_AMOUNTS = [50000, 100000, 200000, 300000, 500000];
 
@@ -59,21 +59,20 @@ export function CartPanel() {
     discount,
     customerName,
     notes,
-    paymentMethod,
-    cashReceived,
+    payments,
     removeItem,
     updateQuantity,
     setDiscount,
     setCustomerName,
     setNotes,
-    setPaymentMethod,
+    addPayment,
+    updatePayment,
+    removePayment,
     setCashReceived,
     clearCart,
     getSubtotal,
     getTax,
     getTotal,
-    getChangeAmount,
-    getShortfall,
     getItemCount,
     canCheckout,
   } = useCartStore();
@@ -84,13 +83,15 @@ export function CartPanel() {
   const subtotal = getSubtotal();
   const tax = getTax();
   const total = getTotal();
-  const changeAmount = getChangeAmount();
-  const shortfall = getShortfall();
-  const isCash = paymentMethod === "cash";
-  const isInsufficient = isCash && cashReceived > 0 && cashReceived < total;
+  const payment = summarizePayments(payments, total);
+  const changeAmount = payment.changeAmount;
+  const isSplit = payments.length > 1;
+  const single = payments[0];
+  const isSingleCash = !isSplit && single?.method === "cash";
+  const isInsufficient = isSingleCash && payment.remaining > 0 && (single?.cashReceived ?? 0) > 0;
 
   const handleCheckout = async () => {
-    if (!canCheckout() || !user) return;
+    if (!canCheckout() || !user || !payment.canCheckout) return;
 
     setIsProcessing(true);
     setSuccessMessage("");
@@ -108,20 +109,21 @@ export function CartPanel() {
         tax,
         discount,
         total,
-        paymentMethod,
+        paymentMethod: payment.paymentMethod,
+        payments: payment.resolved,
         cashierId: user.id,
         cashierName: user.name,
         customerName: customerName || undefined,
         notes: notes || undefined,
-        ...(isCash && {
-          cashReceived,
-          changeAmount: cashReceived - total,
+        ...(payment.cashReceived !== undefined && {
+          cashReceived: payment.cashReceived,
         }),
+        changeAmount: payment.changeAmount,
       });
 
       clearCart();
       const changeText =
-        isCash && order.changeAmount
+        order.changeAmount
           ? ` Kembalian ${formatCurrency(order.changeAmount)}.`
           : "";
       setSuccessMessage(`Pesanan ${order.orderNumber} berhasil!${changeText}`);
@@ -170,6 +172,11 @@ export function CartPanel() {
                     <p className="font-medium text-sm truncate">
                       {item.product.name}
                     </p>
+                    {item.product.isPromoBundling && item.product.bundleItems && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.product.bundleItems.join(" · ")}
+                      </p>
+                    )}
                     <p className="text-sm text-primary font-semibold">
                       {formatCurrency(item.product.price)}
                     </p>
@@ -215,7 +222,7 @@ export function CartPanel() {
         )}
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-3 border-t p-4 bg-cream/20">
+      <CardFooter className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto border-t bg-cream/20 p-4">
         <div className="w-full space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -245,79 +252,154 @@ export function CartPanel() {
             </div>
           </div>
 
-          <div>
-            <Label className="text-xs">Metode Pembayaran</Label>
-            <Select
-              value={paymentMethod}
-              onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
-            >
-              <SelectTrigger className="h-9 text-sm rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.map((method) => (
-                  <SelectItem key={method.value} value={method.value}>
-                    <span className="flex items-center gap-2">
-                      {method.icon}
-                      {method.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Pembayaran</Label>
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-0.5">
+              {payments.map((line, index) => {
+                const showAmount = isSplit || line.method !== "cash";
+                const amountValue =
+                  !isSplit && line.method !== "cash" && line.amount === 0
+                    ? total
+                    : line.amount;
+                const cashChange = Math.max(0, line.cashReceived - line.amount);
 
-          {isCash && (
-            <div className="space-y-2 rounded-xl border border-primary/20 bg-white p-3 shadow-sm">
-              <Label htmlFor="cash-received" className="text-xs font-semibold">
-                Uang Dibayar (Rp)
-              </Label>
-              <CurrencyInput
-                id="cash-received"
-                value={cashReceived}
-                onChange={setCashReceived}
-                placeholder="Masukkan nominal pembayaran"
-              />
-
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {QUICK_AMOUNTS.map((amount) => (
-                  <Button
-                    key={amount}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 rounded-lg px-2.5 text-xs font-medium"
-                    onClick={() => setCashReceived(amount)}
+                return (
+                  <div
+                    key={line.id}
+                    className="space-y-2 rounded-xl border border-primary/20 bg-white p-3 shadow-sm"
                   >
-                    {formatCurrency(amount)}
-                  </Button>
-                ))}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 rounded-lg px-2.5 text-xs font-semibold"
-                  onClick={() => setCashReceived(total)}
-                >
-                  Uang Pas
-                </Button>
-              </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-xs">
+                        Metode Pembayaran{isSplit ? ` ${index + 1}` : ""}
+                      </Label>
+                      {isSplit && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0 rounded-lg text-destructive"
+                          onClick={() => removePayment(line.id)}
+                          aria-label="Hapus pembayaran"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    <Select
+                      value={line.method}
+                      onValueChange={(value) =>
+                        updatePayment(line.id, { method: value as PaymentMethod })
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-full text-sm rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map((method) => (
+                          <SelectItem key={method.value} value={method.value}>
+                            <span className="flex items-center gap-2">
+                              {paymentIcons[method.value]}
+                              {method.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-              {isInsufficient && (
-                <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm">
-                  <p className="font-medium text-destructive">
-                    Nominal pembayaran kurang
-                  </p>
-                  <div className="mt-1 flex justify-between text-destructive/90">
-                    <span>Kekurangan</span>
-                    <span className="font-semibold tabular-nums">
-                      {formatCurrency(shortfall)}
-                    </span>
+                    {showAmount && (
+                      <div>
+                        <Label className="text-xs">Jumlah</Label>
+                        <CurrencyInput
+                          value={amountValue}
+                          onChange={(value) =>
+                            updatePayment(line.id, { amount: value })
+                          }
+                          placeholder="Masukkan nominal"
+                        />
+                      </div>
+                    )}
+
+                    {line.method === "cash" && isSplit && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">Uang Diterima</Label>
+                        <CurrencyInput
+                          value={line.cashReceived}
+                          onChange={(value) =>
+                            updatePayment(line.id, { cashReceived: value })
+                          }
+                          placeholder="Uang diterima"
+                        />
+                        <div className="flex justify-between text-sm text-emerald-700">
+                          <span>Kembalian</span>
+                          <span className="font-semibold tabular-nums">
+                            {formatCurrency(cashChange)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {line.method === "cash" && !isSplit && (
+                      <div className="space-y-2">
+                        <Label htmlFor="cash-received" className="text-xs font-semibold">
+                          Uang Dibayar (Rp)
+                        </Label>
+                        <CurrencyInput
+                          id="cash-received"
+                          value={line.cashReceived}
+                          onChange={setCashReceived}
+                          placeholder="Masukkan nominal pembayaran"
+                        />
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {QUICK_AMOUNTS.map((amount) => (
+                            <Button
+                              key={amount}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 rounded-lg px-2.5 text-xs font-medium"
+                              onClick={() => setCashReceived(amount)}
+                            >
+                              {formatCurrency(amount)}
+                            </Button>
+                          ))}
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 rounded-lg px-2.5 text-xs font-semibold"
+                            onClick={() => setCashReceived(total)}
+                          >
+                            Uang Pas
+                          </Button>
+                        </div>
+                        {isInsufficient && (
+                          <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm">
+                            <p className="font-medium text-destructive">
+                              Nominal pembayaran kurang
+                            </p>
+                            <div className="mt-1 flex justify-between text-destructive/90">
+                              <span>Kekurangan</span>
+                              <span className="font-semibold tabular-nums">
+                                {formatCurrency(payment.remaining)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })}
             </div>
-          )}
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 w-full rounded-xl text-xs"
+              onClick={addPayment}
+            >
+              + Tambah Pembayaran
+            </Button>
+          </div>
 
           <Input
             placeholder="Catatan (opsional)"
@@ -360,32 +442,51 @@ export function CartPanel() {
             </span>
           </div>
 
-          {isCash && (
-            <>
-              <div className="flex justify-between pt-1">
-                <span className="text-muted-foreground">Dibayar</span>
-                <span className="font-semibold tabular-nums">
-                  {cashReceived > 0
-                    ? formatCurrency(cashReceived)
-                    : formatCurrency(0)}
-                </span>
-              </div>
-              {cashReceived >= total && cashReceived > 0 ? (
-                <div className="flex justify-between text-emerald-700">
-                  <span className="font-medium">Kembalian</span>
-                  <span className="font-bold tabular-nums">
-                    {formatCurrency(changeAmount)}
-                  </span>
-                </div>
-              ) : shortfall > 0 ? (
-                <div className="flex justify-between text-destructive">
-                  <span className="font-medium">Kekurangan</span>
-                  <span className="font-bold tabular-nums">
-                    {formatCurrency(shortfall)}
-                  </span>
-                </div>
-              ) : null}
-            </>
+          <div className="flex justify-between pt-1">
+            <span className="text-muted-foreground">Total Dibayar</span>
+            <span className="font-semibold tabular-nums">
+              {formatCurrency(payment.totalPaid)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Sisa</span>
+            <span
+              className={cn(
+                "font-semibold tabular-nums",
+                payment.remaining > 0 && "text-destructive"
+              )}
+            >
+              {formatCurrency(payment.remaining)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Status</span>
+            <span
+              className={cn(
+                "font-semibold",
+                payment.isPaid ? "text-emerald-700" : "text-muted-foreground"
+              )}
+            >
+              {payment.isPaid ? "✓ Lunas" : "Belum Lunas"}
+            </span>
+          </div>
+          {changeAmount > 0 && (
+            <div className="flex justify-between text-emerald-700">
+              <span className="font-medium">Kembalian</span>
+              <span className="font-bold tabular-nums">
+                {formatCurrency(changeAmount)}
+              </span>
+            </div>
+          )}
+          {payment.overpayMessage && (
+            <p className="text-sm font-medium text-destructive">
+              {payment.overpayMessage}
+            </p>
+          )}
+          {payment.invalidMessage && (
+            <p className="text-sm font-medium text-destructive">
+              {payment.invalidMessage}
+            </p>
           )}
         </div>
 

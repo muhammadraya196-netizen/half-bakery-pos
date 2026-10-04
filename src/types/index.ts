@@ -88,6 +88,15 @@ export interface Product {
   rating?: number;
   isBestSeller?: boolean;
   isCustomerFavorite?: boolean;
+  /** Item promo bundling. Hanya diisi pada data demo bundling di kasir. */
+  isPromoBundling?: boolean;
+  /** Isi paket, mis. "1 Coffee". */
+  bundleItems?: string[];
+  /** Harga sebelum diskon bundle. Tidak mengubah harga produk katalog. */
+  originalPrice?: number;
+  /** Selisih harga normal dan harga bundle. */
+  savings?: number;
+  promoLabel?: string;
   badge?: "new" | "limited";
   minStock?: number;
   createdAt: string;
@@ -100,7 +109,27 @@ export interface CartItem {
 }
 
 export type OrderStatus = "pending" | "completed" | "cancelled" | "refunded";
-export type PaymentMethod = "cash" | "card" | "qris" | "transfer";
+
+/** Metode pembayaran kasir. `card` tetap berarti E-Wallet (data lama). */
+export const PAYMENT_METHOD_VALUES = [
+  "cash",
+  "debit",
+  "credit",
+  "card",
+  "qris",
+  "transfer",
+] as const;
+
+export type PaymentMethod = (typeof PAYMENT_METHOD_VALUES)[number];
+
+/** Satu baris pembayaran dalam satu transaksi (split payment). */
+export interface OrderPayment {
+  method: PaymentMethod;
+  /** Nominal yang dihitung ke tagihan. */
+  amount: number;
+  /** Uang diterima. Hanya untuk tunai, boleh lebih besar dari `amount` (kembalian). */
+  cashReceived?: number;
+}
 
 export interface OrderItem {
   productId: string;
@@ -118,7 +147,10 @@ export interface Order {
   tax: number;
   discount: number;
   total: number;
+  /** Metode pertama. Transaksi lama hanya punya field ini. */
   paymentMethod: PaymentMethod;
+  /** Seluruh pembayaran. Kosong pada transaksi lama (satu metode). */
+  payments?: OrderPayment[];
   status: OrderStatus;
   cashierId: string;
   cashierName: string;

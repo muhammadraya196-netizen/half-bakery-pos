@@ -36,15 +36,6 @@ export function AboutSection() {
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
-              <div className="absolute -bottom-6 -right-6 w-48 h-48 rounded-2xl overflow-hidden shadow-bakery hidden md:block">
-                <Image
-                  src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&q=80"
-                  alt="Fresh pastry from HALF Bakery"
-                  fill
-                  className="object-cover"
-                  sizes="200px"
-                />
-              </div>
               <div className="absolute -top-4 -left-4 bg-primary text-primary-foreground rounded-2xl px-5 py-3 shadow-bakery">
                 <p className="font-display text-2xl font-bold">Since</p>
                 <p className="text-sm opacity-90">2020 Makassar</p>

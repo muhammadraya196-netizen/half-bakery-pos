@@ -34,16 +34,17 @@ export const NAV_LINKS = [
 export const PROMOS = [
   {
     id: "promo-1",
+    slug: "birthday-cake",
     title: "Diskon 20% Birthday Cake",
     description:
       "Rayakan momen spesial dengan birthday cake premium. Berlaku setiap hari Selasa & Kamis.",
     badge: "Limited",
-    image:
-      "https://images.unsplash.com/photo-1578985545069-469a028d384b?w=800&q=80",
+    image: "/images/promo-birthday-cake.jpg",
     gradient: "from-primary/90 to-bakery-dark/90",
   },
   {
     id: "promo-2",
+    slug: "buy2get1-bread",
     title: "Buy 2 Get 1 Bread",
     description:
       "Beli 2 roti artisan favoritmu, gratis 1 roti pilihan. Berlaku di semua outlet.",
@@ -54,6 +55,7 @@ export const PROMOS = [
   },
   {
     id: "promo-3",
+    slug: "weekend-promo",
     title: "Weekend Promo",
     description:
       "Diskon 15% untuk semua pastry & dessert setiap Sabtu dan Minggu.",
