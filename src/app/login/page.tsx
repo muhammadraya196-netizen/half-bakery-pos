@@ -33,7 +33,7 @@ function getRedirectTarget(): string {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useSessionStore();
+  const { login, isAuthenticated, hasHydrated } = useSessionStore();
 
   const {
     register,
@@ -49,10 +49,12 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Hanya redirect setelah session dari storage siap,
+    // supaya akses langsung ke /dashboard tanpa login tidak dilompati.
+    if (hasHydrated && isAuthenticated) {
       router.replace(getRedirectTarget());
     }
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
