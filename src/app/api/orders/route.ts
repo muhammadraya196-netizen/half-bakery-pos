@@ -35,6 +35,15 @@ const createOrderSchema = z
           quantity: z.number().int().positive(),
           price: z.number().min(0),
           subtotal: z.number().min(0),
+          bundleComponents: z
+            .array(
+              z.object({
+                productId: z.string(),
+                productName: z.string(),
+                quantity: z.number().int().positive(),
+              })
+            )
+            .optional(),
         })
       )
       .min(1, "Keranjang kosong"),
@@ -185,7 +194,7 @@ export async function GET(request: Request) {
     offset: toNumber(searchParams.get("offset")),
   };
 
-  const orders = getOrders();
+  const orders = await getOrders();
 
   // Backward compatible: tanpa `limit` → kembalikan array (dipakai dashboard).
   // Dengan `limit` → kembalikan envelope { data, total, limit, offset, summary }.
@@ -208,13 +217,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const order = createOrder({
+    const order = await createOrder({
       ...parsed.data,
       status: "completed",
     });
 
     return NextResponse.json(order, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("Stok tidak cukup")) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
     return NextResponse.json(
       { message: "Terjadi kesalahan server" },
       { status: 500 }

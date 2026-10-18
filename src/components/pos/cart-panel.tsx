@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Card,
   CardContent,
@@ -104,6 +103,9 @@ export function CartPanel() {
           quantity: item.quantity,
           price: item.product.price,
           subtotal: item.product.price * item.quantity,
+          ...(item.product.bundleComponents?.length
+            ? { bundleComponents: item.product.bundleComponents }
+            : {}),
         })),
         subtotal,
         tax,
@@ -128,16 +130,20 @@ export function CartPanel() {
           : "";
       setSuccessMessage(`Pesanan ${order.orderNumber} berhasil!${changeText}`);
       setTimeout(() => setSuccessMessage(""), 5000);
-    } catch {
-      alert("Gagal memproses pesanan. Silakan coba lagi.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gagal memproses pesanan. Silakan coba lagi.";
+      alert(message);
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <Card className="flex h-full flex-col rounded-xl border-border/50 shadow-bakery">
-      <CardHeader className="pb-3">
+    <Card className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border-border/50 shadow-bakery">
+      <CardHeader className="shrink-0 pb-3">
         <CardTitle className="flex items-center justify-between font-display">
           <span>Keranjang</span>
           <span className="text-sm font-normal text-muted-foreground">
@@ -146,9 +152,9 @@ export function CartPanel() {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
         {successMessage && (
-          <div className="mx-4 mb-3 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+          <div className="mx-4 mb-3 shrink-0 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
             {successMessage}
           </div>
         )}
@@ -161,27 +167,27 @@ export function CartPanel() {
             </p>
           </div>
         ) : (
-          <ScrollArea className="h-[calc(100vh-520px)] min-h-[120px] px-4">
-            <div className="space-y-3">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4">
+            <div className="flex flex-col gap-3 pb-3">
               {items.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex items-start gap-3 rounded-xl border border-border/50 p-3 bg-white"
+                  className="flex shrink-0 items-start gap-3 rounded-xl border border-border/50 bg-white p-3"
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
                       {item.product.name}
                     </p>
                     {item.product.isPromoBundling && item.product.bundleItems && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="truncate text-xs text-muted-foreground">
                         {item.product.bundleItems.join(" · ")}
                       </p>
                     )}
-                    <p className="text-sm text-primary font-semibold">
+                    <p className="text-sm font-semibold text-primary">
                       {formatCurrency(item.product.price)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <Button
                       variant="outline"
                       size="icon"
@@ -192,7 +198,7 @@ export function CartPanel() {
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center text-sm font-medium">
+                    <span className="w-8 shrink-0 text-center text-sm font-medium tabular-nums">
                       {item.quantity}
                     </span>
                     <Button
@@ -218,11 +224,11 @@ export function CartPanel() {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         )}
       </CardContent>
 
-      <CardFooter className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto border-t bg-cream/20 p-4">
+      <CardFooter className="flex max-h-[52%] min-h-0 shrink-0 flex-col gap-3 overflow-y-auto border-t bg-cream/20 p-4">
         <div className="w-full space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <div>

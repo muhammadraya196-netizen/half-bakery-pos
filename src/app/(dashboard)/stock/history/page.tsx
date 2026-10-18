@@ -77,8 +77,8 @@ export default function StockHistoryPage() {
         title="Riwayat Pergerakan Stok"
         description="Seluruh histori stok masuk & keluar (audit log)"
       />
-      <div className="space-y-6 p-6">
-        <Card>
+      <div className="min-w-0 space-y-6 p-6">
+        <Card className="min-w-0">
           <CardHeader className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <CardTitle>Riwayat Pergerakan Stok</CardTitle>
@@ -110,7 +110,7 @@ export default function StockHistoryPage() {
             />
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <CardContent className="min-w-0 space-y-4">
             <div
               className={cn(
                 "transition-opacity duration-200",
@@ -131,6 +131,7 @@ export default function StockHistoryPage() {
                 offset={offset}
                 currentPage={page}
                 onPageChange={setPage}
+                itemLabel="transaksi"
               />
             )}
           </CardContent>

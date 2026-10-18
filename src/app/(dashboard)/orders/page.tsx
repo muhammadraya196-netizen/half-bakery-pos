@@ -78,12 +78,23 @@ export default function SalesPage() {
     [period, customRange]
   );
 
-  // Reset ke halaman 1 setiap filter berubah.
-  useEffect(() => {
+  const filterKey = [
+    period,
+    range.startDate,
+    range.endDate,
+    status,
+    debouncedSearch,
+    limit,
+    sortBy,
+    sortDir,
+  ].join("|");
+  const [appliedFilterKey, setAppliedFilterKey] = useState(filterKey);
+  if (appliedFilterKey !== filterKey) {
+    setAppliedFilterKey(filterKey);
     setPage(1);
-  }, [period, customRange, status, debouncedSearch, limit, sortBy, sortDir]);
-
-  const offset = (page - 1) * limit;
+  }
+  const currentPage = appliedFilterKey === filterKey ? page : 1;
+  const offset = (currentPage - 1) * limit;
 
   const query: SalesQuery = useMemo(
     () => ({
@@ -184,13 +195,14 @@ export default function SalesPage() {
               />
             </div>
 
-            {!isLoading && total > 0 && (
+            {!isLoading && total > limit && (
               <ProductPagination
                 total={total}
                 limit={limit}
                 offset={offset}
-                currentPage={page}
+                currentPage={currentPage}
                 onPageChange={setPage}
+                itemLabel="transaksi"
               />
             )}
           </CardContent>
@@ -255,11 +267,23 @@ export default function SalesPage() {
               <div className="space-y-2">
                 <p className="font-medium text-sm">Item Penjualan</p>
                 {selectedOrder.items.map((item, i) => (
-                  <div key={i} className="flex justify-between text-sm">
-                    <span>
-                      {item.productName} x{item.quantity}
-                    </span>
-                    <span>{formatCurrency(item.subtotal)}</span>
+                  <div key={i} className="flex justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <p>
+                        {item.productName} x{item.quantity}
+                      </p>
+                      {item.bundleComponents && item.bundleComponents.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {item.bundleComponents
+                            .map(
+                              (part) =>
+                                `${part.quantity} ${part.productName}`
+                            )
+                            .join(" + ")}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0">{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
               </div>

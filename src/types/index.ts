@@ -76,6 +76,13 @@ export interface UpdateUserPayload {
   avatar?: string;
 }
 
+/** Satu produk katalog di dalam paket promo bundling. */
+export interface BundleComponent {
+  productId: string;
+  productName: string;
+  quantity: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -90,8 +97,10 @@ export interface Product {
   isCustomerFavorite?: boolean;
   /** Item promo bundling. Hanya diisi pada data demo bundling di kasir. */
   isPromoBundling?: boolean;
-  /** Isi paket, mis. "1 Coffee". */
+  /** Isi paket untuk tampilan, mis. "1 Coffee". */
   bundleItems?: string[];
+  /** Produk katalog yang dikonsumsi paket ini. */
+  bundleComponents?: BundleComponent[];
   /** Harga sebelum diskon bundle. Tidak mengubah harga produk katalog. */
   originalPrice?: number;
   /** Selisih harga normal dan harga bundle. */
@@ -137,6 +146,8 @@ export interface OrderItem {
   quantity: number;
   price: number;
   subtotal: number;
+  /** Isi paket. Kosong pada produk biasa. */
+  bundleComponents?: BundleComponent[];
 }
 
 export interface Order {

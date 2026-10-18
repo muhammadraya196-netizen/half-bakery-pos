@@ -21,6 +21,10 @@ export const PROMO_BUNDLING_PRODUCTS: Product[] = [
     originalPrice: 36000,
     savings: 4000,
     bundleItems: ["1 Coffee", "1 Pastry"],
+    bundleComponents: [
+      { productId: "36", productName: "Cafe Latte", quantity: 1 },
+      { productId: "22", productName: "Cinnamon Roll", quantity: 1 },
+    ],
     promoLabel: "BEST SELLER",
     isPromoBundling: true,
     stock: 99,
@@ -38,6 +42,9 @@ export const PROMO_BUNDLING_PRODUCTS: Product[] = [
     originalPrice: 40000,
     savings: 5000,
     bundleItems: ["2 Artisan Bread"],
+    bundleComponents: [
+      { productId: "18", productName: "Japanese Milk Bread", quantity: 2 },
+    ],
     promoLabel: "SAVE MORE",
     isPromoBundling: true,
     stock: 99,
@@ -55,6 +62,9 @@ export const PROMO_BUNDLING_PRODUCTS: Product[] = [
     originalPrice: 52000,
     savings: 7000,
     bundleItems: ["2 Slice Cake"],
+    bundleComponents: [
+      { productId: "10", productName: "Strawberry Shortcake", quantity: 2 },
+    ],
     promoLabel: "FAVORITE",
     isPromoBundling: true,
     stock: 99,
@@ -72,6 +82,10 @@ export const PROMO_BUNDLING_PRODUCTS: Product[] = [
     originalPrice: 34000,
     savings: 4000,
     bundleItems: ["1 Pastry", "1 Coffee"],
+    bundleComponents: [
+      { productId: "22", productName: "Cinnamon Roll", quantity: 1 },
+      { productId: "36", productName: "Cafe Latte", quantity: 1 },
+    ],
     promoLabel: "BREAKFAST",
     isPromoBundling: true,
     stock: 99,
@@ -90,6 +104,10 @@ export const PROMO_BUNDLING_PRODUCTS: Product[] = [
     originalPrice: 80000,
     savings: 10000,
     bundleItems: ["2 Slice Cake", "2 Coffee"],
+    bundleComponents: [
+      { productId: "10", productName: "Strawberry Shortcake", quantity: 2 },
+      { productId: "36", productName: "Cafe Latte", quantity: 2 },
+    ],
     promoLabel: "SPECIAL DEAL",
     isPromoBundling: true,
     stock: 99,

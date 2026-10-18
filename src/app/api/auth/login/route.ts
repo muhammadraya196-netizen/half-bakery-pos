@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mockUsers } from "@/lib/mock-data";
+import { authenticateUser } from "@/lib/db";
 import { loginSchema } from "@/lib/validations/auth";
 
 export async function POST(request: Request) {
@@ -15,9 +15,7 @@ export async function POST(request: Request) {
     }
 
     const { email, password } = parsed.data;
-    const user = mockUsers.find(
-      (u) => u.email === email && u.password === password
-    );
+    const user = await authenticateUser(email, password);
 
     if (!user) {
       return NextResponse.json(

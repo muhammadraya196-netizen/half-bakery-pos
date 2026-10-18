@@ -1,34 +1,27 @@
 import { NextResponse } from "next/server";
 import { mockAnalytics } from "@/lib/mock-data";
-import { getOrders, getProducts } from "@/lib/db";
-import { computeDailySalesStats } from "@/lib/analytics-helpers";
+import { getDashboardStats } from "@/lib/db";
 import type { AnalyticsData } from "@/types";
 
 // Selalu hitung ulang (realtime) setiap dashboard meminta data.
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const orders = getOrders();
-  const products = getProducts();
-
-  const completedOrders = orders.filter((o) => o.status === "completed");
-  const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
-
-  // Metrik kartu dashboard dihitung penuh dari transaksi nyata hari ini.
-  const daily = computeDailySalesStats(orders);
+  const stats = await getDashboardStats();
 
   const analytics: AnalyticsData = {
     // salesByDay / salesByCategory / topProducts dipakai chart (di luar revisi)
     ...mockAnalytics,
-    totalRevenue,
-    totalOrders: orders.length,
-    totalProducts: products.length,
+    totalRevenue: stats.totalRevenue,
+    totalOrders: stats.totalOrders,
+    totalProducts: stats.totalProducts,
     averageOrderValue:
-      completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0,
-    todaySales: daily.todaySales,
-    todayOrderCount: daily.todayOrderCount,
-    todayItemsSold: daily.todayItemsSold,
-    todayAverageSale: daily.todayAverageSale,
+      stats.completedOrders > 0 ? stats.totalRevenue / stats.completedOrders : 0,
+    todaySales: stats.todaySales,
+    todayOrderCount: stats.todayOrderCount,
+    todayItemsSold: stats.todayItemsSold,
+    todayAverageSale:
+      stats.todayOrderCount > 0 ? stats.todaySales / stats.todayOrderCount : 0,
   };
 
   return NextResponse.json(analytics);

@@ -13,6 +13,8 @@ interface CartState {
   notes: string;
   payments: PaymentDraft[];
   addItem: (product: Product) => void;
+  /** Menyelaraskan batas stok baris keranjang dengan ketersediaan terbaru. */
+  syncItemStock: (productId: string, stock: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   setDiscount: (discount: number) => void;
@@ -61,18 +63,58 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   addItem: (product) =>
     set((state) => {
+      if (product.stock <= 0) return state;
       const existing = state.items.find((i) => i.product.id === product.id);
       if (existing) {
-        if (existing.quantity >= product.stock) return state;
+        if (existing.quantity >= product.stock) {
+          if (existing.product.stock === product.stock) return state;
+          return {
+            items: state.items.map((i) =>
+              i.product.id === product.id
+                ? {
+                    ...i,
+                    product,
+                    quantity: Math.min(i.quantity, product.stock),
+                  }
+                : i
+            ),
+          };
+        }
         return {
           items: state.items.map((i) =>
             i.product.id === product.id
-              ? { ...i, quantity: i.quantity + 1 }
+              ? { ...i, product, quantity: i.quantity + 1 }
               : i
           ),
         };
       }
       return { items: [...state.items, { product, quantity: 1 }] };
+    }),
+
+  syncItemStock: (productId, stock) =>
+    set((state) => {
+      const current = state.items.find((item) => item.product.id === productId);
+      if (!current) return state;
+      const nextStock = Math.max(0, stock);
+      if (current.product.stock === nextStock && current.quantity <= nextStock) {
+        return state;
+      }
+      if (nextStock <= 0) {
+        return {
+          items: state.items.filter((item) => item.product.id !== productId),
+        };
+      }
+      return {
+        items: state.items.map((item) =>
+          item.product.id === productId
+            ? {
+                ...item,
+                product: { ...item.product, stock: nextStock },
+                quantity: Math.min(item.quantity, nextStock),
+              }
+            : item
+        ),
+      };
     }),
 
   removeItem: (productId) =>

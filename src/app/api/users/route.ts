@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     offset: toNumber(searchParams.get("offset")),
   };
 
-  return NextResponse.json(queryUsers(getUsers(), query));
+  return NextResponse.json(queryUsers(await getUsers(), query));
 }
 
 export async function POST(request: Request) {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
     const { confirmPassword: _omit, ...data } = parsed.data;
     void _omit;
-    const user = createUser({
+    const user = await createUser({
       ...data,
       phone: data.phone || undefined,
       avatar: data.avatar || undefined,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   getUserById,
-  getUserActivities,
+  getUserWithActivities,
   updateUser,
   deleteUser,
   resetUserPassword,
@@ -24,18 +24,15 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
-  const user = getUserById(params.id);
-  if (!user) {
+  const detail = await getUserWithActivities(params.id);
+  if (!detail) {
     return NextResponse.json(
       { message: "User tidak ditemukan" },
       { status: 404 }
     );
   }
 
-  return NextResponse.json({
-    user,
-    activities: getUserActivities(params.id),
-  });
+  return NextResponse.json(detail);
 }
 
 export async function PUT(request: Request, { params }: Params) {
@@ -60,14 +57,14 @@ export async function PUT(request: Request, { params }: Params) {
     const { password, confirmPassword: _c, ...rest } = parsed.data;
     void _c;
 
-    const updated = updateUser(params.id, {
+    const updated = await updateUser(params.id, {
       ...rest,
       phone: rest.phone || undefined,
       avatar: rest.avatar || undefined,
     });
 
     if (password) {
-      resetUserPassword(params.id, password);
+      await resetUserPassword(params.id, password);
     }
 
     return NextResponse.json(updated);
@@ -98,13 +95,13 @@ export async function PATCH(request: Request, { params }: Params) {
 
     if (action === "reset-password") {
       const password = String(body?.password ?? "");
-      const user = resetUserPassword(params.id, password);
+      const user = await resetUserPassword(params.id, password);
       return NextResponse.json(user);
     }
 
     if (action === "toggle-status") {
       // Tidak boleh menonaktifkan akun sendiri
-      const target = getUserById(params.id);
+      const target = await getUserById(params.id);
       if (!target) {
         return NextResponse.json(
           { message: "User tidak ditemukan" },
@@ -118,7 +115,7 @@ export async function PATCH(request: Request, { params }: Params) {
         );
       }
       const next = target.status === "active" ? "inactive" : "active";
-      const user = setUserStatus(params.id, next);
+      const user = await setUserStatus(params.id, next);
       return NextResponse.json(user);
     }
 
@@ -151,12 +148,22 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
-  const ok = deleteUser(params.id);
-  if (!ok) {
+  try {
+    const ok = await deleteUser(params.id);
+    if (!ok) {
+      return NextResponse.json(
+        { message: "User tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    if (err instanceof UserError) {
+      return NextResponse.json({ message: err.message }, { status: 400 });
+    }
     return NextResponse.json(
-      { message: "User tidak ditemukan" },
-      { status: 404 }
+      { message: "Terjadi kesalahan server" },
+      { status: 500 }
     );
   }
-  return NextResponse.json({ success: true });
 }

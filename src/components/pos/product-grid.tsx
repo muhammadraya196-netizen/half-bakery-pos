@@ -120,6 +120,11 @@ export function ProductGrid({
                   </Badge>
                 </div>
               )}
+              {product.isPromoBundling && product.stock === 0 && (
+                <p className="mt-2 text-xs font-medium text-destructive">
+                  Stok tidak cukup
+                </p>
+              )}
               <Button
                 size="sm"
                 className="mt-2 w-full rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"

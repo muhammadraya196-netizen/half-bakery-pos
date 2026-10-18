@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getProductById, updateProduct, deleteProduct } from "@/lib/db";
+import { getProductById, updateProduct, deleteProduct, DbError } from "@/lib/db";
 import { productSchema } from "@/lib/validations/product";
 
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const product = getProductById(params.id);
+  const product = await getProductById(params.id);
   if (!product) {
     return NextResponse.json({ message: "Produk tidak ditemukan" }, { status: 404 });
   }
@@ -28,13 +28,16 @@ export async function PUT(
       );
     }
 
-    const product = updateProduct(params.id, parsed.data);
+    const product = await updateProduct(params.id, parsed.data);
     if (!product) {
       return NextResponse.json({ message: "Produk tidak ditemukan" }, { status: 404 });
     }
 
     return NextResponse.json(product);
-  } catch {
+  } catch (error) {
+    if (error instanceof DbError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
     return NextResponse.json(
       { message: "Terjadi kesalahan server" },
       { status: 500 }
@@ -46,9 +49,19 @@ export async function DELETE(
   _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const deleted = deleteProduct(params.id);
-  if (!deleted) {
-    return NextResponse.json({ message: "Produk tidak ditemukan" }, { status: 404 });
+  try {
+    const deleted = await deleteProduct(params.id);
+    if (!deleted) {
+      return NextResponse.json({ message: "Produk tidak ditemukan" }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof DbError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+    return NextResponse.json(
+      { message: "Terjadi kesalahan server" },
+      { status: 500 }
+    );
   }
-  return NextResponse.json({ success: true });
 }

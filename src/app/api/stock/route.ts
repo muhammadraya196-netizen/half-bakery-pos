@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     offset: toNumber(searchParams.get("offset")),
   };
 
-  return NextResponse.json(queryMovements(getStockMovements(), query));
+  return NextResponse.json(queryMovements(await getStockMovements(), query));
 }
 
 const stockMovementSchema = z.object({
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const movement = createStockMovement(parsed.data);
+    const movement = await createStockMovement(parsed.data);
     return NextResponse.json(movement, { status: 201 });
   } catch (err) {
     if (err instanceof StockError) {

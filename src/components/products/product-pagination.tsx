@@ -12,6 +12,8 @@ interface ProductPaginationProps {
   /** Halaman aktif (1-based) */
   currentPage: number;
   onPageChange: (page: number) => void;
+  /** Kata untuk teks rentang. Default mengikuti daftar produk. */
+  itemLabel?: string;
 }
 
 /** Buat deretan nomor halaman ringkas dengan elipsis (mis. 1 … 4 5 6 … 20). */
@@ -37,6 +39,7 @@ export function ProductPagination({
   offset,
   currentPage,
   onPageChange,
+  itemLabel = "produk",
 }: ProductPaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -57,7 +60,7 @@ export function ProductPagination({
       <p className="text-sm text-muted-foreground">
         Menampilkan <span className="font-medium text-foreground">{from}</span>–
         <span className="font-medium text-foreground">{to}</span> dari{" "}
-        <span className="font-medium text-foreground">{total}</span> produk
+        <span className="font-medium text-foreground">{total}</span> {itemLabel}
       </p>
 
       <div className="flex items-center gap-1">

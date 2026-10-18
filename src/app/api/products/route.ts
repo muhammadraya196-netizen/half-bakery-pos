@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getProducts, createProduct } from "@/lib/db";
+import { getProducts, createProduct, DbError } from "@/lib/db";
 import { productSchema } from "@/lib/validations/product";
 import { queryProducts, filterProducts } from "@/lib/services/product-service";
 import type { ProductQuery, ProductStatus } from "@/types";
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     offset: toNumber(searchParams.get("offset")),
   };
 
-  const products = getProducts();
+  const products = await getProducts();
 
   // Backward compatible: tanpa `limit` → kembalikan array penuh (dipakai POS & menu).
   // Dengan `limit` → kembalikan envelope paginasi { data, total, limit, offset }.
@@ -50,13 +50,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const product = createProduct({
+    const product = await createProduct({
       ...parsed.data,
       description: parsed.data.description || "",
     });
 
     return NextResponse.json(product, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof DbError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
     return NextResponse.json(
       { message: "Terjadi kesalahan server" },
       { status: 500 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,15 @@ import { ProductGrid } from "@/components/pos/product-grid";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { PromoAutoApply } from "@/components/pos/promo-auto-apply";
 import { PromoBanner } from "@/components/pos/promo-banner";
-import { useProducts } from "@/hooks/use-products";
+import { ProductPagination } from "@/components/products/product-pagination";
+import { useProducts, useProductsPaginated } from "@/hooks/use-products";
 import { CATEGORIES, PROMO_BUNDLING_PRODUCTS } from "@/lib/mock-data";
+import { availableBundleSets } from "@/lib/promo/bundling";
+import { useCartStore } from "@/stores/cart-store";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
+
+const PAGE_SIZE = 10;
 
 const PROMO_BUNDLING_FILTER = "promo-bundling";
 
@@ -35,23 +40,59 @@ export default function POSPage() {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(1);
   const isPromoBundling = category === PROMO_BUNDLING_FILTER;
+  const offset = (page - 1) * PAGE_SIZE;
 
-  const { data: products, isLoading } = useProducts({
-    category:
-      !isPromoBundling && category !== "all" ? category : undefined,
-    search: search || undefined,
-  });
+  const query = useMemo(
+    () => ({
+      category:
+        !isPromoBundling && category !== "all" ? category : undefined,
+      search: !isPromoBundling && search ? search : undefined,
+      limit: PAGE_SIZE,
+      offset: isPromoBundling ? 0 : offset,
+    }),
+    [isPromoBundling, category, search, offset]
+  );
 
+  const { data, isLoading, isFetching, isPlaceholderData } =
+    useProductsPaginated(query);
+  const { data: catalog, isLoading: catalogLoading } = useProducts();
+  const cartItems = useCartStore((state) => state.items);
+  const syncItemStock = useCartStore((state) => state.syncItemStock);
+
+  const bundleMatches = PROMO_BUNDLING_PRODUCTS.filter((product) =>
+    matchesBundleSearch(product, search)
+  ).map((bundle) => ({
+    ...bundle,
+    stock: availableBundleSets(bundle, catalog ?? [], cartItems),
+  }));
+
+  useEffect(() => {
+    if (catalogLoading || !catalog) return;
+    for (const bundle of PROMO_BUNDLING_PRODUCTS) {
+      const line = cartItems.find((item) => item.product.id === bundle.id);
+      if (!line) continue;
+      const stock = availableBundleSets(bundle, catalog, cartItems);
+      if (line.product.stock !== stock || line.quantity > stock) {
+        syncItemStock(bundle.id, stock);
+      }
+    }
+  }, [catalog, catalogLoading, cartItems, syncItemStock]);
   const visibleProducts = isPromoBundling
-    ? PROMO_BUNDLING_PRODUCTS.filter((product) =>
-        matchesBundleSearch(product, search)
-      )
-    : (products ?? []);
+    ? bundleMatches.slice(offset, offset + PAGE_SIZE)
+    : (data?.data ?? []);
+  const total = isPromoBundling ? bundleMatches.length : (data?.total ?? 0);
+
+  const selectCategory = (next: string) => {
+    setCategory(next);
+    setPage(1);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInput);
+    setPage(1);
   };
 
   return (
@@ -60,7 +101,7 @@ export default function POSPage() {
       <Suspense fallback={null}>
         <PromoAutoApply />
       </Suspense>
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden lg:flex-row">
         <div className="flex-1 overflow-auto p-4 space-y-4 min-h-0">
           <PromoBanner />
           <form onSubmit={handleSearch} className="flex gap-2">
@@ -82,7 +123,7 @@ export default function POSPage() {
             <Button
               variant={category === "all" ? "default" : "outline"}
               size="sm"
-              onClick={() => setCategory("all")}
+              onClick={() => selectCategory("all")}
             >
               Semua
             </Button>
@@ -91,7 +132,7 @@ export default function POSPage() {
                 key={cat}
                 variant={category === cat ? "default" : "outline"}
                 size="sm"
-                onClick={() => setCategory(cat)}
+                onClick={() => selectCategory(cat)}
                 className={cn(category === cat && "bg-primary")}
               >
                 {cat}
@@ -100,24 +141,42 @@ export default function POSPage() {
             <Button
               variant={isPromoBundling ? "default" : "outline"}
               size="sm"
-              onClick={() => setCategory(PROMO_BUNDLING_FILTER)}
+              onClick={() => selectCategory(PROMO_BUNDLING_FILTER)}
               className={cn(isPromoBundling && "bg-primary")}
             >
               Promo Bundling
             </Button>
           </div>
 
-          <ProductGrid
-            products={visibleProducts}
-            isLoading={isPromoBundling ? false : isLoading}
-            emptyTitle={
-              isPromoBundling ? "Tidak ada promo bundling tersedia." : undefined
-            }
-            emptyDescription={isPromoBundling ? "" : undefined}
-          />
+          <div
+            className={cn(
+              "space-y-4 transition-opacity duration-200",
+              !isPromoBundling && isPlaceholderData && isFetching && "opacity-60"
+            )}
+          >
+            <ProductGrid
+              products={visibleProducts}
+              isLoading={isPromoBundling ? catalogLoading : isLoading}
+              emptyTitle={
+                isPromoBundling
+                  ? "Tidak ada promo bundling tersedia."
+                  : undefined
+              }
+              emptyDescription={isPromoBundling ? "" : undefined}
+            />
+            {total > PAGE_SIZE && (
+              <ProductPagination
+                total={total}
+                limit={PAGE_SIZE}
+                offset={offset}
+                currentPage={page}
+                onPageChange={setPage}
+              />
+            )}
+          </div>
         </div>
 
-        <div className="w-full lg:w-[26rem] xl:w-96 shrink-0 border-t lg:border-t-0 lg:border-l bg-muted/30 p-4 min-h-[420px] lg:min-h-0">
+        <div className="flex h-[min(58vh,100%)] min-h-0 w-full shrink-0 flex-col overflow-hidden border-t bg-muted/30 p-4 lg:h-full lg:w-[26rem] lg:border-l lg:border-t-0 xl:w-96">
           <CartPanel />
         </div>
       </div>

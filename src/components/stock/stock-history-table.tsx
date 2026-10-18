@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MovementTypeBadge } from "@/components/stock/stock-badges";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import type { StockMovement } from "@/types";
 
 interface StockHistoryTableProps {
@@ -49,59 +49,84 @@ export function StockHistoryTable({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Tanggal</TableHead>
-            <TableHead>No. Transaksi</TableHead>
-            <TableHead>Jenis</TableHead>
-            <TableHead>Produk</TableHead>
-            <TableHead>Supplier</TableHead>
-            <TableHead className="text-center">Qty Masuk</TableHead>
-            <TableHead className="text-center">Qty Keluar</TableHead>
-            <TableHead className="text-center">Stok Sebelum</TableHead>
-            <TableHead className="text-center">Stok Sesudah</TableHead>
-            <TableHead>Petugas</TableHead>
-            <TableHead>Keterangan</TableHead>
+    <Table className="min-w-[72rem]">
+      <TableHeader>
+        <TableRow>
+          <TableHead>Tanggal</TableHead>
+          <TableHead>No. Transaksi</TableHead>
+          <TableHead>Jenis</TableHead>
+          <TableHead>Produk</TableHead>
+          <TableHead>Supplier</TableHead>
+          <TableHead className="text-right">Qty Masuk</TableHead>
+          <TableHead className="text-right">Qty Keluar</TableHead>
+          <TableHead className="text-right">Harga Beli</TableHead>
+          <TableHead className="text-right">Total</TableHead>
+          <TableHead className="text-right">Stok</TableHead>
+          <TableHead>Petugas</TableHead>
+          <TableHead>Alasan / Keterangan</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {movements.map((m) => (
+          <TableRow key={m.id}>
+            <TableCell className="whitespace-nowrap align-top text-sm text-muted-foreground">
+              {formatDate(m.createdAt)}
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top font-mono text-xs">
+              {m.transactionNumber}
+            </TableCell>
+            <TableCell className="align-top">
+              <MovementTypeBadge type={m.type} />
+            </TableCell>
+            <TableCell className="min-w-[11rem] max-w-[16rem] whitespace-normal align-top">
+              <p className="font-medium leading-snug">{m.productName}</p>
+              {m.category ? (
+                <p className="text-xs text-muted-foreground">{m.category}</p>
+              ) : null}
+            </TableCell>
+            <TableCell className="min-w-[9rem] max-w-[14rem] whitespace-normal align-top text-sm text-muted-foreground">
+              {m.supplier || "-"}
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top text-right font-medium tabular-nums text-emerald-600">
+              {m.quantityIn > 0
+                ? `+${m.quantityIn}${m.unit ? ` ${m.unit}` : ""}`
+                : "-"}
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top text-right font-medium tabular-nums text-red-600">
+              {m.quantityOut > 0
+                ? `-${m.quantityOut}${m.unit ? ` ${m.unit}` : ""}`
+                : "-"}
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top text-right tabular-nums">
+              {m.purchasePrice !== undefined
+                ? formatCurrency(m.purchasePrice)
+                : "-"}
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top text-right font-medium tabular-nums">
+              {m.totalPrice !== undefined ? formatCurrency(m.totalPrice) : "-"}
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top text-right tabular-nums">
+              <span className="text-muted-foreground">{m.stockBefore}</span>
+              <span className="px-1 text-muted-foreground">→</span>
+              <span className="font-semibold">{m.stockAfter}</span>
+            </TableCell>
+            <TableCell className="whitespace-nowrap align-top text-sm">
+              {m.officerName}
+            </TableCell>
+            <TableCell className="min-w-[8rem] max-w-[14rem] whitespace-normal align-top text-sm">
+              {m.reason ? (
+                <p className="font-medium leading-snug">{m.reason}</p>
+              ) : null}
+              {m.note ? (
+                <p className="leading-snug text-muted-foreground">{m.note}</p>
+              ) : null}
+              {!m.reason && !m.note ? (
+                <span className="text-muted-foreground">-</span>
+              ) : null}
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {movements.map((m) => (
-            <TableRow key={m.id}>
-              <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                {formatDate(m.createdAt)}
-              </TableCell>
-              <TableCell className="font-mono text-xs">
-                {m.transactionNumber}
-              </TableCell>
-              <TableCell>
-                <MovementTypeBadge type={m.type} />
-              </TableCell>
-              <TableCell className="font-medium">{m.productName}</TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {m.supplier || "-"}
-              </TableCell>
-              <TableCell className="text-center text-emerald-600 font-medium">
-                {m.quantityIn > 0 ? `+${m.quantityIn}` : "-"}
-              </TableCell>
-              <TableCell className="text-center text-red-600 font-medium">
-                {m.quantityOut > 0 ? `-${m.quantityOut}` : "-"}
-              </TableCell>
-              <TableCell className="text-center">{m.stockBefore}</TableCell>
-              <TableCell className="text-center font-semibold">
-                {m.stockAfter}
-              </TableCell>
-              <TableCell className="text-sm">{m.officerName}</TableCell>
-              <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                {m.reason ? `${m.reason}` : ""}
-                {m.reason && m.note ? " · " : ""}
-                {m.note || (!m.reason ? "-" : "")}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

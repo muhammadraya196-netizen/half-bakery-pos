@@ -5,6 +5,7 @@ import { buildStockOverview } from "@/lib/services/stock-service";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const overview = buildStockOverview(getProducts(), getStockMovements());
+  const [products, movements] = await Promise.all([getProducts(), getStockMovements()]);
+  const overview = buildStockOverview(products, movements);
   return NextResponse.json(overview);
 }
